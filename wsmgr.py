@@ -16,7 +16,7 @@ def load_word_set(language):
     if not os.path.exists(path):
         return set()
     file = open(path)
-    word_set = set(file.read().split())
+    word_set = set(file.read().encode('cp1251').decode('u8').split())
     file.close()
     return word_set
 
