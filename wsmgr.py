@@ -16,7 +16,9 @@ def load_word_set(language):
     if not os.path.exists(path):
         return set()
     file = open(path)
-    return file.read().split()
+    word_set = set(file.read().split())
+    file.close()
+    return word_set
 
 
 def top_up_word_set(word_set, text):
@@ -34,12 +36,12 @@ def save_word_set(word_set, language):
     if not os.path.isdir(path):
         os.mkdir(path)
     path += '/words.txt'
-    file = None
     if os.path.isfile(path):
-        file = open(path, 'a+')
+        file = open(path, 'a')
     else:
-        file = open(path, 'w+')
+        file = open(path, 'x')
     file.write('\n'.join(list(word_set)))
+    file.close()
 
 
 def main(args):
@@ -51,6 +53,7 @@ def main(args):
         return
     file = open(args.source)
     text = [line for line in file]
+    file.close()
     word_set = load_word_set(args.language)
     prev_len = len(word_set)
     top_up_word_set(word_set, text)
