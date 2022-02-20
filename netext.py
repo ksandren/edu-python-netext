@@ -58,7 +58,8 @@ class Window(MainWindow):
         draw_text(IDENT, IDENT + 3 * LINE_HEIGHT, anchor='nw',
                   text=stat, font=FONT, fill='green')
         if self.text_state.round_started:
-            round_timer = self.text_state.round_time * 60 - (time.time_ns() - self.text_state.start_time_ns) / 600000000
+            round_timer = self.text_state.round_time * 60
+            round_timer -= (time.time_ns() - self.text_state.start_time_ns) / 1_000_000_000
             m = round(round_timer) // 60
             s = round(round_timer) % 60
             draw_text(IDENT, IDENT + 4 * LINE_HEIGHT, anchor='nw',

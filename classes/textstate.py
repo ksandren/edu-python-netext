@@ -82,12 +82,14 @@ class TextState:
 
     def update_timer(self):
         if self.round_started:
-            self.input_speed = self.useful_keys / ((time.time_ns() - self.start_time_ns) / 60000000000)
-            if (time.time_ns() - self.start_time_ns) / 600000000 >= self.round_time * 60:
+            time_left = (time.time_ns() - self.start_time_ns) / 60_000_000_000
+            self.input_speed = self.useful_keys / time_left
+            if time_left >= self.round_time:
                 self.round_started = False
                 self.round_finished()
                 self.current_line = ''
                 self.next_line = ''
+                self.prev_line = ''
 
     def set_lang(self, lang):
         self._str_gen = StringGenerator(lang)
