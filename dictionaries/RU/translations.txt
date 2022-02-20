@@ -1,0 +1,14 @@
+Choose language:
+Выбери язык:
+Choose round time:
+Выбери время теста:
+Start
+Старт
+Keys statistics: useful: 
+Статистика клавиш: полезные:
+ useless: 
+ бесполезные:
+ speed: 
+ скорость:
+Stop
+Стоп

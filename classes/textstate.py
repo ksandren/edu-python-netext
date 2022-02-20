@@ -2,10 +2,19 @@
 # -*- coding: UTF-8 -*-
 
 import time
+from enum import Enum
 from classes.stringgenerator import StringGenerator
 
 
 LINE_LEN = 40
+
+
+class HighlightType(Enum):
+    EMPTY = '_'
+    CORRECT = '+'
+    INCORRECT = '-'
+    DELETED = 'x'
+    FIXED = 'v'
 
 
 class TextState:
@@ -33,7 +42,7 @@ class TextState:
                 self.input_len -= 1
             self.cursor_pos -= 1
             self.current_input[self.cursor_pos] = ''
-            self.current_highlight[self.cursor_pos] = 'x'
+            self.current_highlight[self.cursor_pos] = HighlightType.DELETED
 
     def put_char(self, char):
         if self.useful_keys + self.useless_keys == 0:
@@ -48,12 +57,12 @@ class TextState:
                 self.useless_keys += 1
             else:
                 self.useful_keys += 1
-            if self.current_highlight[self.cursor_pos] == '_':
-                self.current_highlight[self.cursor_pos] = '+'
+            if self.current_highlight[self.cursor_pos] == HighlightType.EMPTY:
+                self.current_highlight[self.cursor_pos] = HighlightType.CORRECT
             else:
-                self.current_highlight[self.cursor_pos] = 'v'
+                self.current_highlight[self.cursor_pos] = HighlightType.FIXED
         else:
-            self.current_highlight[self.cursor_pos] = '-'
+            self.current_highlight[self.cursor_pos] = HighlightType.INCORRECT
             self.useless_keys += 1
         self.current_input[self.cursor_pos] = char
         self.cursor_pos += 1
@@ -65,7 +74,7 @@ class TextState:
         self.prev_line = self.current_line + ' ' + str(round(self.input_speed)) + 'spm'
         self.current_line = self.next_line
         self.next_line = self._str_gen.gen_rand_string(LINE_LEN)
-        self.current_highlight = ['_'] * len(self.current_line)
+        self.current_highlight = [HighlightType.EMPTY] * len(self.current_line)
         self.current_input = [''] * len(self.current_line)
         self.cursor_pos = 0
         self.input_len = 0
@@ -80,23 +89,26 @@ class TextState:
         if self.cursor_pos < self.input_len:
             self.cursor_pos += 1
 
+    def stop(self):
+        self.round_started = False
+        self.round_finished()
+        self.current_line = ''
+        self.next_line = ''
+        self.prev_line = ''
+
     def update_timer(self):
         if self.round_started:
             time_left = (time.time_ns() - self.start_time_ns) / 60_000_000_000
             self.input_speed = self.useful_keys / time_left
             if time_left >= self.round_time:
-                self.round_started = False
-                self.round_finished()
-                self.current_line = ''
-                self.next_line = ''
-                self.prev_line = ''
+                self.stop()
 
     def set_lang(self, lang):
         self._str_gen = StringGenerator(lang)
         self.current_line = self._str_gen.gen_rand_string(LINE_LEN)
         self.next_line = self._str_gen.gen_rand_string(LINE_LEN)
         self.current_input = [''] * len(self.current_line)
-        self.current_highlight = ['_'] * len(self.current_line)
+        self.current_highlight = [HighlightType.EMPTY] * len(self.current_line)
         self.prev_line = ''
         self.cursor_pos = 0
         self.input_len = 0
@@ -104,3 +116,6 @@ class TextState:
         self.useless_keys = 0
         self.input_speed = 0
         self.start_time_ns = 0
+
+    def is_active(self):
+        return len(self.current_line) > 0
