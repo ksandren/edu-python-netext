@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
-from tkinter import *
+import tkinter as tk
 from tkinter import ttk
 from classes.textstate import TextState
 from wsmgr import DICT_PATH
@@ -9,6 +9,14 @@ import os
 IDENT = 5
 LINE_HEIGHT = 20
 FONT = ('Consolas', 14)
+WIN_WIDTH = 650
+WIN_HEIGHT = 150
+SETTINGS_FILE = 'settings.txt'
+
+
+def load_languages():
+    result = os.listdir(DICT_PATH)
+    return result
 
 
 class MainWindow:
@@ -16,35 +24,40 @@ class MainWindow:
         self.text_state = TextState()
         self.text_state.round_finished = self.round_finished
 
-        self.root = Tk()
-        self.root.title("Not Enough Text")
-        self.root.geometry('600x150')
+        self.root = tk.Tk()
+        self.root.title('Not Enough Text')
+        self.root.geometry(str(WIN_WIDTH) + 'x' + str(WIN_HEIGHT))
+        self.root.minsize(WIN_WIDTH, WIN_HEIGHT)
+        self.root.maxsize(WIN_WIDTH, WIN_HEIGHT)
 
-        # TODO settings = self.load_settings()
+        self.settings = dict()
+        self.load_settings()
+        self.root.protocol('WM_DELETE_WINDOW', self.on_close)
 
         self.translations = dict()
-        self.language = 'EN'  # settings['lang']
+        self.language = self.settings.get('lang', 'RU')
         self.load_translations()
 
-        self.lbl1 = Label(self.root, text=self.translate('Choose language:'))
-        self.lbl1.grid(column=0, row=0)
+        self.lbl_ch_lang = tk.Label(self.root, text=self.translate('Choose language:'))
+        self.lbl_ch_lang.grid(column=0, row=0)
 
-        self.cb_lang = ttk.Combobox(self.root, values=['EN', 'RU'])
+        self.cb_lang = ttk.Combobox(self.root, values=load_languages(), state='readonly')
         self.cb_lang.grid(column=1, row=0)
-        self.cb_lang.current(0)
+        self.cb_lang.current(self.cb_lang['values'].index(self.settings.get('lang', 'RU')))
         self.cb_lang.bind("<<ComboboxSelected>>", self.change_lang)
 
-        self.lbl2 = Label(self.root, text=self.translate('Choose round time:'))
-        self.lbl2.grid(column=2, row=0)
+        self.lbl_ch_time = tk.Label(self.root, text=self.translate('Choose round time:'))
+        self.lbl_ch_time.grid(column=2, row=0)
 
-        self.cb_round_time = ttk.Combobox(self.root, values=['1', '2', '3'])
+        self.cb_round_time = ttk.Combobox(self.root, values=['1', '2', '3'], state='readonly')
         self.cb_round_time.grid(column=3, row=0)
-        self.cb_round_time.current(0)
+        self.cb_round_time.current(self.cb_round_time['values'].index(self.settings.get('time', '1')))
+        self.cb_round_time.bind("<<ComboboxSelected>>", self.change_round_time)
 
-        self.btn_start = Button(self.root, text=self.translate('Start'), width=10, command=self.btn_start_clicked)
+        self.btn_start = tk.Button(self.root, text=self.translate('Start'), width=10, command=self.btn_start_clicked)
         self.btn_start.grid(column=4, row=0)
 
-        self.cvs = Canvas(self.root, width=600, height=105, bg='white')
+        self.cvs = tk.Canvas(self.root, width=WIN_WIDTH, height=105, bg='white')
         self.cvs.grid(column=0, row=1, columnspan=5)
         self.cvs.bind('<Key>', self.cvs_key_event)
         self.draw_text = self.cvs.create_text
@@ -66,8 +79,8 @@ class MainWindow:
             self.cvs.focus_set()
 
     def round_finished(self):
-        self.cb_lang.config(state='normal')
-        self.cb_round_time.config(state='normal')
+        self.cb_lang.config(state='readonly')
+        self.cb_round_time.config(state='readonly')
         self.btn_start.config(text=self.translate('Start'))
         self.btn_start.focus_set()
 
@@ -127,8 +140,33 @@ class MainWindow:
         file.close()
 
     def change_lang(self, e):
+        self.settings['lang'] = self.cb_lang.get()
         self.language = self.cb_lang.get()
         self.load_translations()
-        self.lbl1.config(text=self.translate('Choose language:'))
-        self.lbl2.config(text=self.translate('Choose round time:'))
+        self.lbl_ch_lang.config(text=self.translate('Choose language:'))
+        self.lbl_ch_time.config(text=self.translate('Choose round time:'))
         self.btn_start.config(text=self.translate('Start'))
+
+    def change_round_time(self, e):
+        self.settings['time'] = self.cb_round_time.get()
+
+    def load_settings(self):
+        if os.path.isfile(SETTINGS_FILE):
+            file = open(SETTINGS_FILE, 'r')
+            for line in file:
+                key, value = line[:-1].split('=')
+                self.settings[key] = value
+            file.close()
+        if len(self.settings) == 0:
+            self.settings['lang'] = 'RU'
+            self.settings['time'] = '1'
+
+    def save_settings(self):
+        file = open(SETTINGS_FILE, 'w')
+        for key in self.settings:
+            file.write(key + '=' + self.settings[key] + '\n')
+        file.close()
+
+    def on_close(self):
+        self.save_settings()
+        self.root.destroy()
